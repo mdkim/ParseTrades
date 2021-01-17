@@ -45,9 +45,12 @@ class ParseTrades {
         ) {
             SimplePrinter out = new SimplePrinter(writer, IS_WRITER_OUT);
             out.println();
-            
+
             String line = reader.readLine();
 			//String[] fieldNames = line.split(",", -1);
+
+            boolean isMandatoryExchangeStart = true;
+            String mandatoryExchangeStartSymbol = null;
 
             lineLoop:
             while ((line = reader.readLine()) != null) {
@@ -57,9 +60,6 @@ class ParseTrades {
                 @SuppressWarnings("unused")
                 BigDecimal commission = BigDecimal.ZERO, regFee = BigDecimal.ZERO;
                 // Date date; String transId; Big Decimal price;
-
-                boolean isMandatoryExchangeStart = true;
-                String mandatoryExchangeStartSymbol = null;
 
                 SymbolTally tally;
                 String symbol = null, desc = null;
@@ -103,13 +103,6 @@ class ParseTrades {
                     }
                 }
 
-                tally = tallies.get(symbol);
-                if (tally == null) tally = new SymbolTally(symbol);
-                
-                String message = tally.trade(quantity, amount);
-                tallies.put(symbol, tally);
-                out.println(message);
-
                 // Mandatory Exchange:
                 if (desc.startsWith("MANDATORY - EXCHANGE ")) {
                     mandatoryExchangeStartSymbol = doMandatoryExchange(
@@ -117,6 +110,13 @@ class ParseTrades {
                         tallies, isMandatoryExchangeStart);
                     isMandatoryExchangeStart = !isMandatoryExchangeStart;
                 }
+
+                tally = tallies.get(symbol);
+                if (tally == null) tally = new SymbolTally(symbol);
+                
+                String message = tally.trade(quantity, amount);
+                tallies.put(symbol, tally);
+                if (message != null) out.println(message);
             }
 
             // OUTPUT:
@@ -148,7 +148,7 @@ class ParseTrades {
             return symbol;
         }
         SymbolTally tally = tallies.get(startSymbol);
-        tally.exchange(symbol, quantity);
+        tally.exchange(symbol, startSymbol, quantity);
         tallies.put(symbol, tally);
         tallies.remove(startSymbol);
         return null;
